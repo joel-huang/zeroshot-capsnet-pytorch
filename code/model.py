@@ -56,7 +56,7 @@ class CapsuleNetwork(nn.Module):
         self.init_weights()
 
 
-    def forward(self, input,len, embedding):
+    def forward(self, input, len, embedding):
         self.s_len = len
         input = input.transpose(0,1) #(Bach,Length,D) => (L,B,D)
         # Attention
