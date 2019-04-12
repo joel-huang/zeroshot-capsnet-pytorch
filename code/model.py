@@ -56,7 +56,7 @@ class CapsuleNetwork(nn.Module):
         self.init_weights()
 
 
-    def forward(self, input, len, embedding):
+    def forward(self, input, len, embedding, hc):
         self.s_len = len
         input = input.transpose(0,1) #(Bach,Length,D) => (L,B,D)
         # Attention
@@ -66,11 +66,7 @@ class CapsuleNetwork(nn.Module):
         emb = self.word_embedding(input)
         packed_emb = pack_padded_sequence(emb, len)
 
-        #Initialize hidden states
-        h_0 = Variable(torch.zeros(4, input.shape[1], self.hidden_size))
-        c_0 = Variable(torch.zeros(4, input.shape[1], self.hidden_size))
-
-        outp = self.bilstm(packed_emb, (h_0, c_0))[0] ## [bsz, len, d_h * 2]
+        outp = self.bilstm(packed_emb, hc)[0] ## [bsz, len, d_h * 2]
         outp = pad_packed_sequence(outp)[0].transpose(0,1).contiguous()
         size = outp.size()
         compressed_embeddings = outp.view(-1, size[2])  # [bsz * len, d_h * 2]
@@ -108,12 +104,12 @@ class CapsuleNetwork(nn.Module):
             r_t_shape += [i + 4]
 
         votes_trans = votes.permute(votes_t_shape)
-        logits = nn.Parameter(torch.zeros(logit_shape[0], logit_shape[1], logit_shape[2]))
+        logits = nn.Parameter(torch.zeros(logit_shape[0], logit_shape[1], logit_shape[2])).cuda()
         activations = []
 
         # Iterative routing.
         for iteration in range(self.num_routing):
-            route = F.softmax(logits, dim=2)
+            route = F.softmax(logits, dim=2).cuda()
             preactivate_unrolled = route * votes_trans
             preact_trans = preactivate_unrolled.permute(r_t_shape)
             # delete bias to fit for unseen classes
@@ -169,6 +165,6 @@ class CapsuleNetwork(nn.Module):
 
         self_atten_mul = torch.matmul(self.attention, self.attention.permute([0, 2, 1])).float()
         sample_num, att_matrix_size, _ = self_atten_mul.shape
-        self_atten_loss = (torch.norm(self_atten_mul - torch.from_numpy(np.identity(att_matrix_size)).float()).float()) ** 2
+        self_atten_loss = (torch.norm(self_atten_mul - torch.from_numpy(np.identity(att_matrix_size)).float().cuda()).float()) ** 2
 
         return 1000 * loss_val + self.alpha * torch.mean(self_atten_loss)
