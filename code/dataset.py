@@ -1,5 +1,5 @@
 from gensim.models.keyedvectors import KeyedVectors
-import tool
+import utils
 
 import torch
 from torch.utils.data import Dataset
@@ -117,7 +117,7 @@ class IntentDataset(Dataset):
     def load_embedding(self):
         # load normalized word embeddings
         embedding = self.w2v.syn0
-        norm_embedding = tool.norm_matrix(embedding)
+        norm_embedding = utils.norm_matrix(embedding)
         
         # Stack one layer of zeros on the embedding
         # to handle padding. So the total length of

@@ -12,7 +12,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 import torch.nn.functional as F
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
-import tool
+import utils
 import math
 
 from sklearn.metrics import classification_report
@@ -61,7 +61,7 @@ def get_sim(train_set, test_set):
     """
     seen = normalize(torch.stack(list(train_set.class_w2v.values())))
     unseen = normalize(torch.stack(list(test_set.class_w2v.values())))
-    sim = tool.compute_label_sim(unseen, seen, config['sim_scale'])
+    sim = utils.compute_label_sim(unseen, seen, config['sim_scale'])
     return torch.from_numpy(sim)
 
 def _squash(input_tensor):
